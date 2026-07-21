@@ -20,3 +20,8 @@ def root():
 def ping():
     """Simple ping endpoint."""
     return {"status": "ok", "message": "pong"}
+
+
+@router.get("/lokeshji", response_model=PingResponse)
+def lokeshji():
+    return {"status": "failed"}
