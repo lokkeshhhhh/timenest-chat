@@ -15,7 +15,7 @@ class ChatMessage(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     uuid: Mapped[str] = mapped_column(String(36), unique=True, default=lambda: str(uuid_lib.uuid4()))
     conversation_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("chat_conversations.id"))
-    sender_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    sender_id: Mapped[int] = mapped_column(BigInteger, index=True)
     content: Mapped[str] = mapped_column(Text)
     message_type: Mapped[MessageType] = mapped_column(Enum(MessageType), default=MessageType.TEXT)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

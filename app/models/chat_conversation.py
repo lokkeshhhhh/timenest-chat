@@ -16,10 +16,10 @@ class ChatConversation(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     uuid: Mapped[str] = mapped_column(String(36), unique=True, default=lambda: str(uuid_lib.uuid4()))
-    organization_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("organizations.id"))
+    organization_id: Mapped[int] = mapped_column(BigInteger, index=True)
     type: Mapped[ConversationType] = mapped_column(Enum(ConversationType))
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    created_by: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
+    created_by: Mapped[int] = mapped_column(BigInteger, index=True)
     last_message_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,8 +1,8 @@
 from sqlalchemy import String, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column
-from app.core.database import Base
+from app.models.external_base import ExternalBase
 
-class User(Base):
+class User(ExternalBase):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)

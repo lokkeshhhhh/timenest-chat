@@ -9,7 +9,7 @@ class ChatParticipant(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     conversation_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("chat_conversations.id"))
-    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     left_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

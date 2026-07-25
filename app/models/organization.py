@@ -1,8 +1,8 @@
-from sqlachemy import String, BigInteger
-from sqlachemy.orm import Mapped, mapped_column
-from app.core.database import Base
+from sqlalchemy import String, BigInteger
+from sqlalchemy.orm import Mapped, mapped_column
+from app.models.external_base import ExternalBase
 
-class Organization(Base):
+class Organization(ExternalBase):
     __tablename__ = "organizations"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
