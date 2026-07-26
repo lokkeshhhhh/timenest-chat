@@ -14,6 +14,7 @@ def decode_jwt(token: str) -> dict:
             settings.jwt_secret,
             algorithms=[settings.jwt_algo]
         )
+        return payload
     except ExpiredSignatureError:
         raise InvalidTokenError("Token has been expired.")
     except JWTError:

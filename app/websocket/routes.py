@@ -16,7 +16,8 @@ async def chat_websocket(websocket: WebSocket, token: str = Query(...)):
     async with AsyncSessionLocal() as db:
         try:
             auth_context = await get_current_user(token=token, db=db)
-        except Exception:
+        except Exception as e:
+            print(f"WebSocket Auth Failed: {e}")
             # Connection accept karne se PEHLE reject — client ko clean error milega
             await websocket.close(code=4401)  # custom code: unauthorized
             return
