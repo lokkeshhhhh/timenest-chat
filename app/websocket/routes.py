@@ -24,14 +24,14 @@ async def chat_websocket(websocket: WebSocket, token: str = Query(...)):
 
     # Auth pass ho gaya — ab connection accept karo
     await websocket.accept()
-    await manager.connect(auth_context.user_id, websocket)
+    await manager.connect(auth_context.user_uuid, websocket)
 
     try:
         while True:
             # Client se message wait karo (yeh line block karti hai jab tak naya message na aaye)
             data = await websocket.receive_json()
             # Abhi ke liye sirf echo kar rahe hain — Step 9 me actual save-to-DB + broadcast aayega
-            await websocket.send_json({"echo": data, "from_user": auth_context.user_id})
+            await websocket.send_json({"echo": data, "from_user": auth_context.user_uuid})
 
     except WebSocketDisconnect:
-        manager.disconnect(auth_context.user_id, websocket)
+        manager.disconnect(auth_context.user_uuid, websocket)
