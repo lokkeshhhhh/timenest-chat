@@ -6,7 +6,7 @@ Provides the FastAPI app and mounts routers for chat, health, and websocket.
 from fastapi import FastAPI
 from app.routers.chat import router as chat_router
 from app.routers.health import router as health_router
-from app.websocket.chat_socket import router as websocket_router
+from app.websocket.routes import router as websocket_router
 
 app = FastAPI(title="timenest-chat")
 
