@@ -20,3 +20,5 @@ class ChatParticipant(Base):
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     left_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

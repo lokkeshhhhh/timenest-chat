@@ -13,3 +13,4 @@ class ChatMessageReaction(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, index=True)
     emoji: Mapped[str] = mapped_column(String(16))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -17,3 +17,4 @@ class ChatAttachment(Base):
     file_size_bytes: Mapped[int] = mapped_column(BigInteger)
     original_filename: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
