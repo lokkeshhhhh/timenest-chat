@@ -15,6 +15,8 @@ from app.core.database import Base
 from app.models.chat_conversation import ChatConversation
 from app.models.chat_participant import ChatParticipant
 from app.models.chat_message import ChatMessage
+from app.models.chat_reaction import ChatMessageReaction
+from app.models.chat_attachment import ChatAttachment
 
 settings = get_settings()
 

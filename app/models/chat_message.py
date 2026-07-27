@@ -8,6 +8,8 @@ from app.core.database import Base
 class MessageType(str, enum.Enum):
     TEXT = "text"
     SYSTEM = "system"
+    IMAGE = "image"
+    FILE = "file"
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"

@@ -19,6 +19,8 @@ class ChatConversation(Base):
     organization_id: Mapped[int] = mapped_column(BigInteger, index=True)
     type: Mapped[ConversationType] = mapped_column(Enum(ConversationType))
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_by: Mapped[int] = mapped_column(BigInteger, index=True)
     last_message_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
