@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -66,3 +66,15 @@ async def get_current_user(
         organization_uuid=organization_uuid,
         role=payload.get("role"),
     )
+
+async def get_current_user_from_header(
+    authorization: str = Header(...),
+    db: AsyncSession = Depends(get_db),
+) -> AuthContext:
+
+    if not authorization.startswith('Bearer '):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid token format')
+
+    token = authorization.replace("Bearer ", "", 1)
+
+    return await get_current_user(token=token, db=db)
