@@ -1,7 +1,7 @@
 import enum
 import uuid as uuid_lib
 from datetime import datetime
-from sqlalchemy import String, BigInteger, ForeignKey, DateTime, Enum
+from sqlalchemy import String, BigInteger, ForeignKey, DateTime, Enum, Index
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 
@@ -13,6 +13,9 @@ class ConversationType(str, enum.Enum):
 
 class ChatConversation(Base):
     __tablename__ = "chat_conversations"
+    __table_args__ = (
+        Index("ix_chat_conversations_org_type", "organization_id", "type"),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     uuid: Mapped[str] = mapped_column(String(36), unique=True, default=lambda: str(uuid_lib.uuid4()))

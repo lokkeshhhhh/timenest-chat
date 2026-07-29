@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.orm import aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chat_conversation import ChatConversation, ConversationType
@@ -28,28 +29,25 @@ async def get_or_create_direct_conversation(
         raise UserNotFoundError("Participant user not found")
 
     # Step 2: existing direct conversation dhoondo jisme YEH DONO users hain
-    # Approach: un conversations ko dhoondo jinme current_user hai, type='direct',
-    # phir un me se check karo kis me participant bhi hai
+    # Approach: Use table aliases to join ChatParticipant twice in a single query
+    cp1 = aliased(ChatParticipant)
+    cp2 = aliased(ChatParticipant)
+
     result = await db.execute(
         select(ChatConversation)
-        .join(ChatParticipant, ChatParticipant.conversation_id == ChatConversation.id)
+        .join(cp1, cp1.conversation_id == ChatConversation.id)
+        .join(cp2, cp2.conversation_id == ChatConversation.id)
         .where(
             ChatConversation.type == ConversationType.DIRECT,
             ChatConversation.organization_id == organization_id,
-            ChatParticipant.user_id == current_user_id,
+            cp1.user_id == current_user_id,
+            cp2.user_id == participant.id,
         )
     )
-    candidate_conversations = result.scalars().all()
-
-    for conv in candidate_conversations:
-        result = await db.execute(
-            select(ChatParticipant).where(
-                ChatParticipant.conversation_id == conv.id,
-                ChatParticipant.user_id == participant.id,
-            )
-        )
-        if result.scalar_one_or_none():
-            return conv, False  # existing conversation mil gaya
+    existing_conv = result.scalar_one_or_none()
+    
+    if existing_conv:
+        return existing_conv, False
 
     # Step 3: nahi mila, naya banao
     new_conversation = ChatConversation(

@@ -1,6 +1,6 @@
 from datetime import datetime
 import enum
-from sqlalchemy import BigInteger, ForeignKey, DateTime, Enum
+from sqlalchemy import BigInteger, ForeignKey, DateTime, Enum, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 
@@ -12,6 +12,9 @@ class ParticipantRole(str, enum.Enum):
 
 class ChatParticipant(Base):
     __tablename__ = "chat_participants"
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "user_id", name="uix_chat_participant_conv_user"),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     conversation_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("chat_conversations.id"))
