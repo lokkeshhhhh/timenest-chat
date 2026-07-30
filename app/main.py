@@ -4,8 +4,6 @@ Provides the FastAPI app and mounts routers for chat, health, and websocket.
 """
 
 from fastapi import FastAPI
-from app.routers.chat import router as chat_router
-from app.routers.health import router as health_router
 from app.websocket.routes import router as websocket_router
 from app.api.conversation_routes import router as conversation_router
 from app.core.config import get_settings
@@ -22,8 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(health_router)
-app.include_router(chat_router)
 app.include_router(websocket_router)
 app.include_router(conversation_router)
 
