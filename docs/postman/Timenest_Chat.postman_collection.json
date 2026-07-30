@@ -1,0 +1,364 @@
+{
+    "info": {
+        "name": "TimeNest Chat API",
+        "description": "API collection for the TimeNest Chat microservice, including direct messaging, group management, and real-time WebSocket configurations.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000/api",
+            "type": "string"
+        },
+        {
+            "key": "ws_url",
+            "value": "ws://localhost:8000/ws",
+            "type": "string"
+        },
+        {
+            "key": "access_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "conversation_uuid",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "user_uuid",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Conversations",
+            "description": "Endpoints to manage direct and group conversations.",
+            "item": [
+                {
+                    "name": "List Conversations",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/conversations",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "conversations"
+                            ]
+                        },
+                        "description": "Fetch a list of all active conversations for the authenticated user, ordered by recent activity, including unread counts."
+                    }
+                },
+                {
+                    "name": "Start Direct Conversation",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"participant_user_uuid\": \"{{user_uuid}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/conversations/direct",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "conversations",
+                                "direct"
+                            ]
+                        },
+                        "description": "Start a new 1-on-1 direct conversation or retrieve the existing one."
+                    }
+                },
+                {
+                    "name": "Get Conversation Messages",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/conversations/{{conversation_uuid}}/messages?limit=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "conversations",
+                                "{{conversation_uuid}}",
+                                "messages"
+                            ],
+                            "query": [
+                                {
+                                    "key": "before",
+                                    "value": "",
+                                    "description": "Message UUID for cursor-based pagination (optional)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20",
+                                    "description": "Number of messages to retrieve (max 100)"
+                                }
+                            ]
+                        },
+                        "description": "Fetch message history for a specific conversation using cursor-based pagination."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Group Management",
+            "description": "Endpoints to manage group chats and participants.",
+            "item": [
+                {
+                    "name": "Create Group",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Engineering Team\",\n    \"participant_user_uuids\": [\n        \"{{user_uuid}}\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/conversations/group",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "conversations",
+                                "group"
+                            ]
+                        },
+                        "description": "Create a new group conversation with specified participants."
+                    }
+                },
+                {
+                    "name": "Add Group Participant",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"user_uuid\": \"{{user_uuid}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/conversations/{{conversation_uuid}}/participants",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "conversations",
+                                "{{conversation_uuid}}",
+                                "participants"
+                            ]
+                        },
+                        "description": "Add a new user to an existing group (Requires Admin role)."
+                    }
+                },
+                {
+                    "name": "Remove Group Participant",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/conversations/{{conversation_uuid}}/participants/{{user_uuid}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "conversations",
+                                "{{conversation_uuid}}",
+                                "participants",
+                                "{{user_uuid}}"
+                            ]
+                        },
+                        "description": "Remove a user from a group (Requires Admin role)."
+                    }
+                },
+                {
+                    "name": "Leave Group",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/conversations/{{conversation_uuid}}/leave",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "conversations",
+                                "{{conversation_uuid}}",
+                                "leave"
+                            ]
+                        },
+                        "description": "Leave a group conversation."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "WebSocket (Reference)",
+            "description": "WebSocket endpoint reference for real-time chat.",
+            "item": [
+                {
+                    "name": "Connect to Chat WS",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{ws_url}}/chat?token={{access_token}}",
+                            "host": [
+                                "{{ws_url}}"
+                            ],
+                            "path": [
+                                "chat"
+                            ],
+                            "query": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}"
+                                }
+                            ]
+                        },
+                        "description": "Connect to the real-time WebSocket. Send JSON payloads like {\"type\": \"message\", \"conversation_uuid\": \"...\", \"content\": \"...\"} or {\"type\": \"mark_as_read\", \"conversation_uuid\": \"...\"}."
+                    }
+                }
+            ]
+        }
+    ]
+}
