@@ -28,6 +28,7 @@ class ConversationListItem(BaseModel):
     name: str | None
     avatar_url: str | None
     last_message_at: datetime | None
+    unread_count: int = 0
 
 
 class MessageHistoryItem(BaseModel):

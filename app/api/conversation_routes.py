@@ -56,7 +56,7 @@ async def list_conversations(
     auth: AuthContext = Depends(get_current_user_from_header),
     db: AsyncSession = Depends(get_db),
 ):
-    conversations = await get_user_conversations(db, auth.user_id)
+    conversations_with_counts = await get_user_conversations(db, auth.user_id)
     return [
         ConversationListItem(
             conversation_uuid=c.uuid,
@@ -64,8 +64,9 @@ async def list_conversations(
             name=c.name,
             avatar_url=c.avatar_url,
             last_message_at=c.last_message_at,
+            unread_count=unread_count,
         )
-        for c in conversations
+        for c, unread_count in conversations_with_counts
     ]
 
 

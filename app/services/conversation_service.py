@@ -1,4 +1,4 @@
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from sqlalchemy.orm import aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -67,18 +67,29 @@ async def get_or_create_direct_conversation(
     return new_conversation, True
 
 
-async def get_user_conversations(db: AsyncSession, user_id: int) -> list[ChatConversation]:
-    """User ki saari active conversations, most-recent-activity-first."""
+async def get_user_conversations(db: AsyncSession, user_id: int) -> list[tuple[ChatConversation, int]]:
+    """User ki saari active conversations, most-recent-activity-first, along with unread count."""
     result = await db.execute(
-        select(ChatConversation)
+        select(
+            ChatConversation,
+            func.count(ChatMessage.id).label("unread_count")
+        )
         .join(ChatParticipant, ChatParticipant.conversation_id == ChatConversation.id)
+        .outerjoin(
+            ChatMessage,
+            (ChatMessage.conversation_id == ChatConversation.id) &
+            (ChatMessage.deleted_at.is_(None)) &
+            (ChatMessage.created_at > func.coalesce(ChatParticipant.last_read_at, ChatParticipant.joined_at)) &
+            (ChatMessage.sender_id != user_id)
+        )
         .where(
             ChatParticipant.user_id == user_id,
             ChatParticipant.left_at.is_(None),
         )
+        .group_by(ChatConversation.id)
         .order_by(desc(ChatConversation.last_message_at))
     )
-    return list(result.scalars().all())
+    return list(result.all())
 
 
 async def get_conversation_messages(

@@ -1,8 +1,13 @@
 from pydantic import BaseModel, Field
 
 class IncomingMessage(BaseModel):
+    type: str = "message"
     conversation_uuid: str = Field(..., min_length=36, max_length=36)
     content: str = Field(..., min_length=1, max_length=5000)
+
+class MarkAsReadEvent(BaseModel):
+    type: str = "mark_as_read"
+    conversation_uuid: str = Field(..., min_length=36, max_length=36)
 
 class OutgoingMessage(BaseModel):
     conversation_uuid: str

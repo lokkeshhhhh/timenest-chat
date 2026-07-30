@@ -76,5 +76,23 @@ async def get_other_participant_uuids(
             ChatParticipant.left_at.is_(None),
             User.uuid != exclude_user_uuid,
         )
-    )
     return [row[0] for row in result.all()]
+
+
+async def mark_conversation_read(db: AsyncSession, conversation_id: int, user_id: int) -> datetime:
+    """User ka last_read_at update karta hai. Returns updated timestamp."""
+    result = await db.execute(
+        select(ChatParticipant).where(
+            ChatParticipant.conversation_id == conversation_id,
+            ChatParticipant.user_id == user_id,
+            ChatParticipant.left_at.is_(None),
+        )
+    )
+    participant = result.scalar_one_or_none()
+    if not participant:
+        raise MembershipError("You are not a participant of this conversation")
+
+    now = datetime.utcnow()
+    participant.last_read_at = now
+    await db.commit()
+    return now
