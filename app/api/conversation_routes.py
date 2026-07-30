@@ -4,10 +4,22 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.auth.dependencies import get_current_user_from_header, AuthContext
-from app.schemas.conversation import StartDirectConversationRequest, ConversationResponse, ConversationListItem, MessageHistoryResponse, MessageHistoryItem
-from app.services.conversation_service import get_or_create_direct_conversation, UserNotFoundError, get_user_conversations, get_conversation_messages
+from app.schemas.conversation import (
+    StartDirectConversationRequest, ConversationResponse, ConversationListItem, 
+    MessageHistoryResponse, MessageHistoryItem, CreateGroupRequest, AddParticipantRequest, GroupActionResponse
+)
+from app.services.conversation_service import (
+    get_or_create_direct_conversation, UserNotFoundError, get_user_conversations, get_conversation_messages, get_conversation_by_uuid
+)
+from app.services.group_service import (
+    create_group_conversation, add_participant, remove_participant, leave_conversation,
+    NotAdminError, AlreadyParticipantError, NotParticipantError, UserNotFoundError as GroupUserNotFoundError
+)
+from app.services.chat_service import get_other_participant_uuids
 from app.models.user import User
 from app.models.chat_conversation import ChatConversation
+from app.models.organization import Organization
+from app.websocket.connection_manager import manager
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 
@@ -19,7 +31,6 @@ async def start_direct_conversation(
     db: AsyncSession = Depends(get_db),
 ):
     # organization_id internal id chahiye (auth me organization_uuid hai)
-    from app.models.organization import Organization
     result = await db.execute(select(Organization).where(Organization.uuid == auth.organization_uuid))
     organization = result.scalar_one_or_none()
     if not organization:
@@ -99,3 +110,124 @@ async def get_messages(
         has_more=has_more,
         next_cursor=items[0].message_uuid if items and has_more else None,
     )
+
+
+@router.post("/group", response_model=ConversationResponse)
+async def create_group(
+    payload: CreateGroupRequest,
+    auth: AuthContext = Depends(get_current_user_from_header),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Organization).where(Organization.uuid == auth.organization_uuid))
+    organization = result.scalar_one_or_none()
+    if not organization:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    try:
+        conversation = await create_group_conversation(
+            db, organization.id, auth.user_id, payload.name, payload.participant_user_uuids
+        )
+    except GroupUserNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    return ConversationResponse(
+        conversation_uuid=conversation.uuid,
+        type=conversation.type.value,
+        name=conversation.name,
+        is_new=True,
+    )
+
+
+@router.post("/{conversation_uuid}/participants", response_model=GroupActionResponse)
+async def add_group_participant(
+    conversation_uuid: str,
+    payload: AddParticipantRequest,
+    auth: AuthContext = Depends(get_current_user_from_header),
+    db: AsyncSession = Depends(get_db),
+):
+    conversation = await get_conversation_by_uuid(db, conversation_uuid)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    try:
+        system_msg, new_user_id = await add_participant(db, conversation.id, auth.user_id, payload.user_uuid)
+    except NotAdminError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except AlreadyParticipantError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except GroupUserNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    # Naya member add hone par group ke baaki members ko websocket alert bhejte hain
+    participant_uuids = await get_other_participant_uuids(db, conversation.id, exclude_user_uuid="")
+    await manager.broadcast_to_users(
+        participant_uuids,
+        {
+            "event": "member_added",
+            "conversation_uuid": conversation.uuid,
+            "system_message": system_msg.content,
+        }
+    )
+
+    return GroupActionResponse(success=True, message="Participant added successfully")
+
+
+@router.delete("/{conversation_uuid}/participants/{user_uuid}", response_model=GroupActionResponse)
+async def remove_group_participant(
+    conversation_uuid: str,
+    user_uuid: str,
+    auth: AuthContext = Depends(get_current_user_from_header),
+    db: AsyncSession = Depends(get_db),
+):
+    conversation = await get_conversation_by_uuid(db, conversation_uuid)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    try:
+        system_msg = await remove_participant(db, conversation.id, auth.user_id, user_uuid)
+    except NotAdminError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except NotParticipantError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except GroupUserNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    participant_uuids = await get_other_participant_uuids(db, conversation.id, exclude_user_uuid="")
+    await manager.broadcast_to_users(
+        participant_uuids,
+        {
+            "event": "member_removed",
+            "conversation_uuid": conversation.uuid,
+            "system_message": system_msg.content,
+        }
+    )
+
+    return GroupActionResponse(success=True, message="Participant removed successfully")
+
+
+@router.post("/{conversation_uuid}/leave", response_model=GroupActionResponse)
+async def leave_group_conversation(
+    conversation_uuid: str,
+    auth: AuthContext = Depends(get_current_user_from_header),
+    db: AsyncSession = Depends(get_db),
+):
+    conversation = await get_conversation_by_uuid(db, conversation_uuid)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    try:
+        system_msg = await leave_conversation(db, conversation.id, auth.user_id)
+    except NotParticipantError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    participant_uuids = await get_other_participant_uuids(db, conversation.id, exclude_user_uuid="")
+    await manager.broadcast_to_users(
+        participant_uuids,
+        {
+            "event": "member_left",
+            "conversation_uuid": conversation.uuid,
+            "system_message": system_msg.content,
+        }
+    )
+
+    return GroupActionResponse(success=True, message="Left group successfully")

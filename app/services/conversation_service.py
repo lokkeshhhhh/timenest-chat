@@ -115,3 +115,8 @@ async def get_conversation_messages(
 
     messages.reverse()  # oldest-first order me return karo (UI me upar se niche padhne ke liye)
     return messages, has_more
+
+
+async def get_conversation_by_uuid(db: AsyncSession, conversation_uuid: str) -> ChatConversation | None:
+    result = await db.execute(select(ChatConversation).where(ChatConversation.uuid == conversation_uuid))
+    return result.scalar_one_or_none()

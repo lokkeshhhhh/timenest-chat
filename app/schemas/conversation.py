@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import List
 from app.schemas.message import Message
@@ -42,3 +42,17 @@ class MessageHistoryResponse(BaseModel):
     messages: list[MessageHistoryItem]
     has_more: bool
     next_cursor: str | None
+
+
+class CreateGroupRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    participant_user_uuids: list[str] = Field(..., min_length=1)
+
+
+class AddParticipantRequest(BaseModel):
+    user_uuid: str
+
+
+class GroupActionResponse(BaseModel):
+    success: bool
+    message: str
