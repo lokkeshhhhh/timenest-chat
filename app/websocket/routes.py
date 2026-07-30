@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from app.core.database import AsyncSessionLocal
 from app.auth.dependencies import get_current_user
 from app.websocket.connection_manager import manager
-from app.schemas.chat import IncomingMessage, OutgoingMessage, MarkAsReadEvent
+from app.schemas.chat import IncomingMessage, OutgoingMessage, MarkAsReadEvent, TypingEvent
 from app.services.chat_service import (
     verify_participant_and_get_conversation,
     save_message,
@@ -37,6 +37,8 @@ async def chat_websocket(websocket: WebSocket, token: str = Query(...)):
 
             if event_type == "mark_as_read":
                 await handle_mark_as_read(websocket, raw_data, auth_context)
+            elif event_type in ("typing_start", "typing_stop"):
+                await handle_typing_event(websocket, raw_data, auth_context)
             else:
                 await handle_send_message(websocket, raw_data, auth_context)
 
@@ -102,4 +104,27 @@ async def handle_mark_as_read(websocket: WebSocket, raw_data: dict, auth_context
         "conversation_uuid": event.conversation_uuid,
         "reader_uuid": auth_context.user_uuid,
         "read_at": read_at.isoformat(),
+    })
+
+
+async def handle_typing_event(websocket: WebSocket, raw_data: dict, auth_context):
+    try:
+        event = TypingEvent(**raw_data)
+    except ValidationError:
+        return  # typing events ke liye error bhejna zaroori nahi, silently ignore
+
+    async with AsyncSessionLocal() as db:
+        try:
+            conversation = await verify_participant_and_get_conversation(
+                db, event.conversation_uuid, auth_context.user_id
+            )
+        except (ConversationNotFoundError, MembershipError):
+            return  # invalid conversation, silently drop
+
+        other_user_uuids = await get_other_participant_uuids(db, conversation.id, auth_context.user_uuid)
+
+    await manager.broadcast_to_users(other_user_uuids, {
+        "type": event.type,  # "typing_start" ya "typing_stop"
+        "conversation_uuid": event.conversation_uuid,
+        "user_uuid": auth_context.user_uuid,
     })

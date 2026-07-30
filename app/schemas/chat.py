@@ -9,6 +9,10 @@ class MarkAsReadEvent(BaseModel):
     type: str = "mark_as_read"
     conversation_uuid: str = Field(..., min_length=36, max_length=36)
 
+class TypingEvent(BaseModel):
+    type: str  # "typing_start" ya "typing_stop"
+    conversation_uuid: str = Field(..., min_length=36, max_length=36)
+
 class OutgoingMessage(BaseModel):
     conversation_uuid: str
     message_uuid: str
