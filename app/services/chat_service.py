@@ -76,6 +76,7 @@ async def get_other_participant_uuids(
             ChatParticipant.left_at.is_(None),
             User.uuid != exclude_user_uuid,
         )
+    )
     return [row[0] for row in result.all()]
 
 
